@@ -2,7 +2,8 @@
 Baking App, Android Developer Nanodegree Program Project
 
 # Project Overview
-![Alt Text](https://github.com/MohNage7/Baking-App/blob/master/app_overview.gif)
+<img src="https://github.com/MohNage7/Baking-App/blob/master/app_overview.gif" width="300" height="533" />
+
 
 Use MediaPlayer/Exoplayer to display videos.
 Handle error cases in Android.
