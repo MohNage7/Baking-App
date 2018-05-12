@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Baking App</string>
+    <string name="title_recipe_detail">Recipe Detail</string>
+    <string name="no_internet">No Internet Connection.</string>
+    <string name="recipes_load_failure">Failed to load recipes</string>
+    <string name="title">title</string>
+    <string name="recipe_image">Recipe Image</string>
+    <string name="title_item_list">Items</string>
+    <string name="title_item_detail">Item Detail</string>
+    <string name="steps">Steps</string>
+    <string name="ingredient">Ingredient</string>
+    <string name="servings">Servings:</string>
+    <string name="recipe_add_fail">Failed to add recipe to widget.</string>
+    <string name="add_to_widget_success">Recipe added to widget successfully</string>
+    <string name="recipe_delete_success">Recipe deleted from widget successfully</string>
+    <string name="content_authority">com.mohnage7.bakingapp</string>
+    <string name="empty_view_text">Nothing to show here</string>
+    <string name="recipes">Recipes</string>
+    <string name="start_adding_message">Add your favorite ingredients and you will see it here.</string>
+
+</resources>

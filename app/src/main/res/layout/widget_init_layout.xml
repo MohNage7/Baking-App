@@ -1,0 +1,11 @@
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/empty_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimary"
+    android:gravity="center"
+    android:text="@string/start_adding_message"
+    android:textAlignment="center"
+    android:textColor="@android:color/white"
+    android:textSize="@dimen/large_font"
+    android:textStyle="bold" />
