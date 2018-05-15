@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -22,11 +23,9 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
@@ -34,6 +33,7 @@ import com.mohnage7.bakingapp.R;
 import com.mohnage7.bakingapp.model.Step;
 
 import static com.mohnage7.bakingapp.recipedetails.StepsActivity.TAG;
+import static com.mohnage7.bakingapp.recipedetails.StepsActivity.VIDEO_POSITION;
 
 /**
  * A fragment representing a single Item detail screen.
@@ -47,6 +47,10 @@ public class StepsFragment extends Fragment implements ExoPlayer.EventListener {
     private SimpleExoPlayer mExoPlayer;
     private MediaSessionCompat mMediaSession;
     private PlaybackStateCompat.Builder mStateBuilder;
+    private ExtractorMediaSource mediaSource;
+    private DefaultTrackSelector trackSelector;
+    private long position;
+
     /**
      * The dummy content this fragment is presenting.
      */
@@ -70,7 +74,10 @@ public class StepsFragment extends Fragment implements ExoPlayer.EventListener {
             // to load content from a content provider.
             mStep = getArguments().getParcelable(STEP);
         }
-
+        position = C.TIME_UNSET;
+        if (savedInstanceState != null && mPlayerView != null) {
+            position = savedInstanceState.getLong(VIDEO_POSITION, C.TIME_UNSET);
+        }
         mContext = getActivity();
     }
 
@@ -79,18 +86,37 @@ public class StepsFragment extends Fragment implements ExoPlayer.EventListener {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.item_detail, container, false);
+
+
         // init player
         mPlayerView = rootView.findViewById(R.id.playerView);
         // fill views
         fillViews(rootView);
+        return rootView;
+    }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mPlayerView != null)
+            position = mExoPlayer.getCurrentPosition();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         // check if playerView is null . as it will be null when user opens the app from phone.
         if (mPlayerView != null)
             // init player view
             setupPlayView();
-        return rootView;
     }
 
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mPlayerView != null)
+            outState.putLong(VIDEO_POSITION, position);
+    }
 
     private void fillViews(View rootView) {
         // fill views
@@ -153,17 +179,19 @@ public class StepsFragment extends Fragment implements ExoPlayer.EventListener {
     private void initializePlayer(Uri mediaUri) {
         if (mExoPlayer == null) {
             // Create an instance of the ExoPlayer.
-            TrackSelector trackSelector = new DefaultTrackSelector();
+            trackSelector = new DefaultTrackSelector();
             LoadControl loadControl = new DefaultLoadControl();
             mExoPlayer = ExoPlayerFactory.newSimpleInstance(mContext, trackSelector, loadControl);
             mPlayerView.setPlayer(mExoPlayer);
-
+            // seek to last video position if exists
+            if (position != C.TIME_UNSET)
+                mExoPlayer.seekTo(position);
             // Set the ExoPlayer.EventListener to this activity.
             mExoPlayer.addListener(this);
 
             // Prepare the MediaSource.
             String userAgent = Util.getUserAgent(mContext, "BakingAPP_Player");
-            MediaSource mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
+            mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
                     mContext, userAgent), new DefaultExtractorsFactory(), null, null);
             mExoPlayer.prepare(mediaSource);
             mExoPlayer.setPlayWhenReady(true);
@@ -243,11 +271,13 @@ public class StepsFragment extends Fragment implements ExoPlayer.EventListener {
      * Release the player when the activity is destroyed.
      */
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onStop() {
+        super.onStop();
         releasePlayer();
         if (mMediaSession != null)
             mMediaSession.setActive(false);
+        trackSelector = null;
+        mediaSource = null;
     }
 
 }
