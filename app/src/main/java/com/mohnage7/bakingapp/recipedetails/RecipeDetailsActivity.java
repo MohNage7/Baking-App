@@ -60,6 +60,7 @@ public class RecipeDetailsActivity extends AppCompatActivity implements StepsAda
 
     private Recipes mRecipe;
     private StepsAdapter stepsAdapter;
+    private StepsFragment stepsFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +72,10 @@ public class RecipeDetailsActivity extends AppCompatActivity implements StepsAda
         if (findViewById(R.id.item_detail_container) != null) {
             mTwoPane = true;
         }
-
+        if (savedInstanceState != null) {
+            //Restore the stepsFragment's instance
+            stepsFragment = (StepsFragment) getSupportFragmentManager().getFragment(savedInstanceState, "myFragmentName");
+        }
         setupRecyclerView();
         setActionbar();
         hideAndShowFabWhileScrolling();
@@ -124,13 +128,16 @@ public class RecipeDetailsActivity extends AppCompatActivity implements StepsAda
     @Override
     public void onStepClicked(Step step) {
         if (mTwoPane) {
-            Bundle arguments = new Bundle();
-            arguments.putParcelable(StepsFragment.STEP, step);
-            StepsFragment fragment = new StepsFragment();
-            fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.item_detail_container, fragment)
-                    .commit();
+            // if fragment is set before don't replace it just keep the old instance.
+            if (stepsFragment == null) {
+                Bundle arguments = new Bundle();
+                arguments.putParcelable(StepsFragment.STEP, step);
+                stepsFragment = new StepsFragment();
+                stepsFragment.setArguments(arguments);
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.item_detail_container, stepsFragment)
+                        .commit();
+            }
         } else {
             Intent intent = new Intent(this, StepsActivity.class);
             // set receipt name
@@ -140,6 +147,12 @@ public class RecipeDetailsActivity extends AppCompatActivity implements StepsAda
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (stepsFragment != null)
+            getSupportFragmentManager().putFragment(outState, "myFragmentName", stepsFragment);
+    }
 
     /**
      * this action method adds recipe to widget if it's not added before

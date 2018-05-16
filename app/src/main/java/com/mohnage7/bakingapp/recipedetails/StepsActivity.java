@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
+import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -21,11 +22,9 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
@@ -45,6 +44,7 @@ import static com.mohnage7.bakingapp.recipedetails.StepsFragment.STEP;
  */
 public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventListener {
     public static final String TAG = "StepActivity";
+    public static final String VIDEO_POSITION = "video_position";
     private Step step;
     private SimpleExoPlayer mExoPlayer;
     private MediaSessionCompat mMediaSession;
@@ -58,11 +58,18 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
     AppBarLayout appBarLayout;
     @BindView(R.id.toolbar_layout)
     CollapsingToolbarLayout collapsingToolbarLayout;
+    private ExtractorMediaSource mediaSource;
+    private DefaultTrackSelector trackSelector;
+    private long position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_detail);
+        position = C.TIME_UNSET;
+        if (savedInstanceState != null) {
+            position = savedInstanceState.getLong(VIDEO_POSITION, C.TIME_UNSET);
+        }
         // bind views
         ButterKnife.bind(this);
         // set action bar
@@ -93,6 +100,26 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        position = mExoPlayer.getCurrentPosition();
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (step.getVideoURL() != null)
+            initializePlayer(Uri.parse(step.getVideoURL()));
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(VIDEO_POSITION, position);
+    }
 
     /**
      * this method shows toolbar title only when it's collapsed
@@ -176,20 +203,23 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
     private void initializePlayer(Uri mediaUri) {
         if (mExoPlayer == null) {
             // Create an instance of the ExoPlayer.
-            TrackSelector trackSelector = new DefaultTrackSelector();
+            trackSelector = new DefaultTrackSelector();
             LoadControl loadControl = new DefaultLoadControl();
             mExoPlayer = ExoPlayerFactory.newSimpleInstance(this, trackSelector, loadControl);
             mPlayerView.setPlayer(mExoPlayer);
-
+            mExoPlayer.setPlayWhenReady(true);
+            // seek to last video position if exists
+            if (position != C.TIME_UNSET)
+                mExoPlayer.seekTo(position);
             // Set the ExoPlayer.EventListener to this activity.
             mExoPlayer.addListener(this);
 
             // Prepare the MediaSource.
             String userAgent = Util.getUserAgent(this, "ClassicalMusicQuiz");
-            MediaSource mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
+            mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
                     this, userAgent), new DefaultExtractorsFactory(), null, null);
             mExoPlayer.prepare(mediaSource);
-            mExoPlayer.setPlayWhenReady(true);
+
         }
     }
 
@@ -200,6 +230,8 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
         mExoPlayer.stop();
         mExoPlayer.release();
         mExoPlayer = null;
+        trackSelector = null;
+        mediaSource = null;
     }
 
     @Override
@@ -273,8 +305,8 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
      * Release the player when the activity is destroyed.
      */
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop() {
+        super.onStop();
         releasePlayer();
         mMediaSession.setActive(false);
     }

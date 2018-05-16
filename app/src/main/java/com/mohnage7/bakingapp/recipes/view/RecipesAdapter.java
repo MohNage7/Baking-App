@@ -3,6 +3,7 @@ package com.mohnage7.bakingapp.recipes.view;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -96,7 +97,7 @@ public class RecipesAdapter extends RecyclerView.Adapter<RecipesAdapter.MoviesVi
          * @param imageUrl image to load
          */
         void loadImage(final String imageUrl) {
-            if (imageUrl != null && !imageUrl.isEmpty())
+            if (!TextUtils.isEmpty(imageUrl))
                 Picasso.with(mContext)
                         .load(imageUrl)
                         .networkPolicy(NetworkPolicy.OFFLINE)
