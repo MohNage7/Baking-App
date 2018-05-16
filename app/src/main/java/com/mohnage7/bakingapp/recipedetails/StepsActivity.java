@@ -45,6 +45,7 @@ import static com.mohnage7.bakingapp.recipedetails.StepsFragment.STEP;
 public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventListener {
     public static final String TAG = "StepActivity";
     public static final String VIDEO_POSITION = "video_position";
+    private static final String PLAY_STATE = "play_state";
     private Step step;
     private SimpleExoPlayer mExoPlayer;
     private MediaSessionCompat mMediaSession;
@@ -61,6 +62,7 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
     private ExtractorMediaSource mediaSource;
     private DefaultTrackSelector trackSelector;
     private long position;
+    private boolean playWhenReadyState = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +71,7 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
         position = C.TIME_UNSET;
         if (savedInstanceState != null) {
             position = savedInstanceState.getLong(VIDEO_POSITION, C.TIME_UNSET);
+            playWhenReadyState = savedInstanceState.getBoolean(PLAY_STATE);
         }
         // bind views
         ButterKnife.bind(this);
@@ -104,7 +107,7 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
     protected void onPause() {
         super.onPause();
         position = mExoPlayer.getCurrentPosition();
-
+        playWhenReadyState = mExoPlayer.getPlayWhenReady();
     }
 
     @Override
@@ -119,6 +122,7 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putLong(VIDEO_POSITION, position);
+        outState.putBoolean(PLAY_STATE, playWhenReadyState);
     }
 
     /**
@@ -207,10 +211,11 @@ public class StepsActivity extends AppCompatActivity implements ExoPlayer.EventL
             LoadControl loadControl = new DefaultLoadControl();
             mExoPlayer = ExoPlayerFactory.newSimpleInstance(this, trackSelector, loadControl);
             mPlayerView.setPlayer(mExoPlayer);
-            mExoPlayer.setPlayWhenReady(true);
             // seek to last video position if exists
-            if (position != C.TIME_UNSET)
+            if (position != C.TIME_UNSET) {
                 mExoPlayer.seekTo(position);
+                mExoPlayer.setPlayWhenReady(playWhenReadyState);
+            }
             // Set the ExoPlayer.EventListener to this activity.
             mExoPlayer.addListener(this);
 
